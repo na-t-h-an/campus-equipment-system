@@ -1,0 +1,10 @@
+package edu.cit.lada.nathanxander.campusequipmentloan.repository;
+
+import edu.cit.lada.nathanxander.campusequipmentloan.model.Student;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface StudentRepository extends JpaRepository<Student, Long> {
+    Student findByStudentNo(String studentNo);
+}
