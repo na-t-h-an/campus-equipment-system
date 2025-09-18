@@ -1,7 +1,6 @@
 package edu.cit.lada.nathanxander.campusequipmentloan.service;
 
 import edu.cit.lada.nathanxander.campusequipmentloan.model.Loan;
-import edu.cit.lada.nathanxander.campusequipmentloan.model.Student;
 import edu.cit.lada.nathanxander.campusequipmentloan.repository.LoanRepository;
 import edu.cit.lada.nathanxander.campusequipmentloan.repository.StudentRepository;
 import org.springframework.stereotype.Service;
@@ -38,25 +37,12 @@ public class LoanService {
             return daysLate * DAILY_PENALTY;
         }
     }
-
-    // Create loan with rules
-    public Loan createLoan(Long studentId, Loan loan) {
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Student not found"));
-
-        // Rule 1: Max 2 active loans
-        List<Loan> activeLoans = loanRepository.findByStudentIdAndReturnDateIsNull(studentId);
+    //Max active loans =< 2
+    public void validateMaxActiveLoans(Long studentId) {
+        List<Loan> activeLoans = loanRepository.findByStudentIdAndStatus(studentId, "ONGOING");
         if (activeLoans.size() >= 2) {
             throw new RuntimeException("Student already has 2 active loans");
         }
-
-        // Rule 2: Loan length = 7 days
-        loan.setStudent(student);
-        loan.setStartDate(LocalDate.now());
-        loan.setDueDate(loan.getStartDate().plusDays(7));
-        loan.setStatus("ONGOING");
-
-        return loanRepository.save(loan);
     }
 
     // Return loan with late fee calculation
