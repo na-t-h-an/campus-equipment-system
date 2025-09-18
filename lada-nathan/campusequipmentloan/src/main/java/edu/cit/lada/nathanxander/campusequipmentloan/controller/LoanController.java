@@ -50,19 +50,29 @@ public class LoanController {
         Optional<Student> studentOpt = studentRepository.findById(request.studentId);
 
         if (equipmentOpt.isEmpty() || studentOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid equipment or student ID.");
+            return ResponseEntity.ok().body("Invalid equipment or student ID.");
+        }
+
+        // Idempotency check
+        Optional<Loan> existingLoan = loanRepository.findByStudentIdAndEquipmentIdAndStatus(
+                request.studentId, request.equipmentId, "ONGOING");
+
+        if (existingLoan.isPresent()) {
+            // Already exists → return same loan (idempotent behavior)
+            return ResponseEntity.ok(existingLoan.get());
         }
 
         Equipment equipment = equipmentOpt.get();
         if (!equipment.isAvailability()) {
-            return ResponseEntity.badRequest().body("Equipment is not available.");
+            return ResponseEntity.ok().body("Equipment is not available.");
         }
 
-        try {
-            // ✅ check rule from service
-            loanService.validateMaxActiveLoans(request.studentId);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        List<Loan> activeLoans = loanService.getActiveLoans(request.studentId);
+        if (activeLoans.size() >= 2) {
+            return ResponseEntity.ok(Map.of(
+                    "message", "Student already has 2 active loans",
+                    "loans", activeLoans
+            ));
         }
 
         Loan loan = new Loan();
@@ -88,12 +98,15 @@ public class LoanController {
         Optional<Loan> loanOpt = loanRepository.findById(id);
 
         if (loanOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Loan not found.");
+            return ResponseEntity.ok().body("Loan not found.");
         }
 
         Loan loan = loanOpt.get();
         if ("RETURNED".equalsIgnoreCase(loan.getStatus())) {
-            return ResponseEntity.badRequest().body("Loan already returned.");
+            return ResponseEntity.ok(Map.of(
+                    "message", "Loan already returned.",
+                    "loan", loan
+            ));
         }
 
         // postman return date if set / default is current date
@@ -122,9 +135,24 @@ public class LoanController {
         return ResponseEntity.ok(loan);
     }
 
-
     @GetMapping("/loans/status/{status}")
     public List<Loan> getLoansByStatus(@PathVariable String status) {
         return loanRepository.findByStatus(status);
+    }
+
+    // GET /api/students/{studentId}/loans
+    @GetMapping("/students/{studentId}/loans")
+    public ResponseEntity<?> getStudentLoanHistory(@PathVariable Long studentId) {
+        Optional<Student> studentOpt = studentRepository.findById(studentId);
+
+        if (studentOpt.isEmpty()) {
+            return ResponseEntity.ok().body("Student not found.");
+        }
+
+        List<Loan> loanHistory = loanRepository.findByStudentId(studentId);
+        return ResponseEntity.ok(Map.of(
+                "student", studentOpt.get(),
+                "loanHistory", loanHistory
+        ));
     }
 }

@@ -3,11 +3,13 @@ package edu.cit.lada.nathanxander.campusequipmentloan.service;
 import edu.cit.lada.nathanxander.campusequipmentloan.model.Loan;
 import edu.cit.lada.nathanxander.campusequipmentloan.repository.LoanRepository;
 import edu.cit.lada.nathanxander.campusequipmentloan.repository.StudentRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class LoanService {
@@ -38,26 +40,7 @@ public class LoanService {
         }
     }
     //Max active loans =< 2
-    public void validateMaxActiveLoans(Long studentId) {
-        List<Loan> activeLoans = loanRepository.findByStudentIdAndStatus(studentId, "ONGOING");
-        if (activeLoans.size() >= 2) {
-            throw new RuntimeException("Student already has 2 active loans");
-        }
-    }
-
-    // Return loan with late fee calculation
-    public Loan returnLoan(Long loanId) {
-        Loan loan = loanRepository.findById(loanId)
-                .orElseThrow(() -> new RuntimeException("Loan not found"));
-
-        loan.setReturnDate(LocalDate.now());
-        loan.setStatus("RETURNED");
-
-        // Rule 3 & 4: Overdue + ₱50/day penalty
-        LateFeeStrategy strategy = new DefaultLateFeeStrategy();
-        double lateFee = strategy.calculateLateFee(loan.getDueDate(), loan.getReturnDate());
-        loan.setPenalty(lateFee);
-
-        return loanRepository.save(loan);
+    public List<Loan> getActiveLoans(Long studentId) {
+        return loanRepository.findByStudentIdAndStatus(studentId, "ONGOING");
     }
 }
