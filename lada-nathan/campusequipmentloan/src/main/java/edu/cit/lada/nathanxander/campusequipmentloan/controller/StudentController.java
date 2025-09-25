@@ -3,6 +3,7 @@ package edu.cit.lada.nathanxander.campusequipmentloan.controller;
 import edu.cit.lada.nathanxander.campusequipmentloan.model.Student;
 import edu.cit.lada.nathanxander.campusequipmentloan.repository.StudentRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,9 +13,12 @@ import java.util.List;
 public class StudentController {
 
     private final StudentRepository studentRepository;
+    private final PasswordEncoder passwordEncoder; // injected encoder
 
-    public StudentController(StudentRepository studentRepository) {
+    // Constructor injection
+    public StudentController(StudentRepository studentRepository, PasswordEncoder passwordEncoder) {
         this.studentRepository = studentRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // Create new student
@@ -24,6 +28,9 @@ public class StudentController {
         if (studentRepository.existsByStudentNo(student.getStudentNo())) {
             return ResponseEntity.ok().body("Student already exists");
         }
+
+        // Encode password before saving
+        student.setPassword(passwordEncoder.encode(student.getPassword()));
 
         // Check if name already exists
         if (studentRepository.existsByName(student.getName())) {

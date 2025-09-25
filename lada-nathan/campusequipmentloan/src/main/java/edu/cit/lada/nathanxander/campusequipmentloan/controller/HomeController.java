@@ -13,6 +13,6 @@ public class HomeController {
 
     @GetMapping("/home")
     public String dashboard() {
-        return "You are logged in. This is the home page.";
+        return "You are logged in. Hello World!.";
     }
 }

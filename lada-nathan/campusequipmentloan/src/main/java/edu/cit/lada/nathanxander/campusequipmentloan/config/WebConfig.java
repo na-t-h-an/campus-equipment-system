@@ -16,16 +16,17 @@ public class WebConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/h2-console/**").permitAll()  // allow H2 console
                         .requestMatchers("/api/users/**").permitAll()   // allow registration
+                        .requestMatchers("/api/students/**").permitAll()
                         .anyRequest().authenticated()                            // secure everything else
                 )
                 .formLogin(form -> form
                         .defaultSuccessUrl("/home", true)  // redirect after login
                         .permitAll()
                 )
-                .logout(logout -> logout
-                        .logoutSuccessUrl("/login?logout")
-                        .permitAll()
-                )
+//                .logout(logout -> logout
+//                        .logoutSuccessUrl("/login?logout")
+//                        .permitAll()
+//                )
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.disable());
 
